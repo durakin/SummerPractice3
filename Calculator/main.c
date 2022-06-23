@@ -12,9 +12,9 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Too many arguments");
         exit(EXIT_SUCCESS);
     }
-    char input[BUFFER_SIZE];
-    input[0] = '\0';
-    to_postfix_notation(argv[1], input);
-    fprintf(stdout,"%f\n", calculate_postfix_notation(input));
+    char posfixbuff[BUFFER_SIZE];
+    posfixbuff[0] = '\0';
+    to_postfix_notation(argv[1], posfixbuff);
+    fprintf(stdout,"%f\n", calculate_postfix_notation(posfixbuff));
     exit(EXIT_SUCCESS);
 }
