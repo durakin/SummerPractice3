@@ -1,14 +1,21 @@
+#define BUFFER_SIZE 200
 #include <stdio.h>
+#include <stdlib.h>
 #include "calc.h"
 
-int main() {
-    char booba[256];
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "No expression");
+        exit(EXIT_FAILURE);
+    }
+    if (argc > 2) {
+        fprintf(stderr, "Too many arguments");
+        exit(EXIT_SUCCESS);
+    }
+
+    char booba[BUFFER_SIZE];
     booba[0] = '\0';
-
-    char hooba[256] = "0-3+4*5-1*3+1/2";
-
-    printf("%d\n", to_postfix_notation(hooba, booba));
-    printf("%s\n", booba);
-    printf("%f\n", calculate_postfix_notation(booba));
-    return 0;
+    to_postfix_notation(argv[1], booba);
+    fprintf(stdout,"%f\n", calculate_postfix_notation(booba));
+    exit(EXIT_SUCCESS);
 }

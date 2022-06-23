@@ -1,9 +1,5 @@
-//
-// Created by durakin on 23.06.22.
-//
-
+#define BUFFER_SIZE 200
 #include <stdio.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include "calc.h"
 #include "string.h"
@@ -31,7 +27,7 @@ int last_digit_index(char* string, int start, char* digitbuffer)
 
 int to_postfix_notation(char* infix_notation, char* postfix_notation)
 {
-    char stackbuff[255];
+    char stackbuff[BUFFER_SIZE];
     int stackpointer = -1;
 
     for (int i = 0; i < strlen(infix_notation); i++)
@@ -41,8 +37,6 @@ int to_postfix_notation(char* infix_notation, char* postfix_notation)
         {
             i = last_digit_index(infix_notation, i, postfix_notation + strlen(postfix_notation));
             string_push(postfix_notation, ' ');
-            //postfix_notation[strlen(postfix_notation)+1] = '\0';
-            //postfix_notation[strlen(postfix_notation)] = ' ';
         }
         if (current == '(')
         {
@@ -53,8 +47,6 @@ int to_postfix_notation(char* infix_notation, char* postfix_notation)
         {
             while (stackpointer >= 0 && stackbuff[stackpointer] != '(')
             {
-                //postfix_notation[(strlen(postfix_notation))+1] = '\0';
-                //postfix_notation[(strlen(postfix_notation))] = stackbuff[stackpointer];
                 string_push(postfix_notation, stackbuff[stackpointer]);
                 stackpointer--;
             }
@@ -66,8 +58,6 @@ int to_postfix_notation(char* infix_notation, char* postfix_notation)
             while(stackpointer >= 0 && (get_priority(stackbuff[stackpointer]) >= get_priority(current)))
             {
                 string_push(postfix_notation, stackbuff[stackpointer]);
-                //postfix_notation[strlen(postfix_notation)+1] = '\0';
-                //postfix_notation[strlen(postfix_notation)] = stackbuff[stackpointer];
                 stackpointer--;
             }
             stackbuff[++stackpointer] = current;
@@ -76,10 +66,8 @@ int to_postfix_notation(char* infix_notation, char* postfix_notation)
     while (stackpointer!=-1)
     {
         string_push(postfix_notation, stackbuff[stackpointer--]);
-        //postfix_notation[strlen(postfix_notation)+1] = '\0';
-        //postfix_notation[strlen(postfix_notation)] = stackbuff[stackpointer--];
     }
-    return strlen(postfix_notation);
+    return (int) strlen(postfix_notation);
 }
 
 double execute_operator(char operator, double first, double second)
@@ -98,8 +86,7 @@ double execute_operator(char operator, double first, double second)
 
 double calculate_postfix_notation(char* postfix_notation)
 {
-    double result = 0;
-    double stackbuff[250];
+    double stackbuff[BUFFER_SIZE];
     int stackpointer = -1;
     int counter = 0;
     for (int i = 0; i < strlen(postfix_notation); i++)
@@ -107,8 +94,8 @@ double calculate_postfix_notation(char* postfix_notation)
         char current = postfix_notation[i];
         if(isdigit(current))
         {
-            char number[10];
-            last_digit_index(postfix_notation, i, number);
+            char number[BUFFER_SIZE];
+            i = last_digit_index(postfix_notation, i, number);
             stackbuff[++stackpointer] = strtod(number, NULL);
         }
         if(get_priority(current) != -1)
