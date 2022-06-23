@@ -1,6 +1,7 @@
 #include "priorities.h"
 int get_priority(char operation)
 {
+    // Should I use something like dictionary map?
     switch (operation) {
         case '+':
         case '-': return 1;
