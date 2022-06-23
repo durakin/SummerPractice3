@@ -2,6 +2,9 @@
 // Created by durakin on 23.06.22.
 //
 
+#include <stdio.h>
+#include <malloc.h>
+#include <stdlib.h>
 #include "calc.h"
 #include "string.h"
 #include "ctype.h"
@@ -77,4 +80,45 @@ int to_postfix_notation(char* infix_notation, char* postfix_notation)
         //postfix_notation[strlen(postfix_notation)] = stackbuff[stackpointer--];
     }
     return strlen(postfix_notation);
+}
+
+double execute_operator(char operator, double first, double second)
+{
+    switch (operator) {
+        case '+': return first+second;
+        case '-': return first-second;
+        case '*': return first*second;
+        case '/': return first/second;
+        default: {
+            fprintf(stderr, "Operator not found: %c", operator);
+            return 0;
+        }
+    }
+}
+
+double calculate_postfix_notation(char* postfix_notation)
+{
+    double result = 0;
+    double stackbuff[250];
+    int stackpointer = -1;
+    int counter = 0;
+    for (int i = 0; i < strlen(postfix_notation); i++)
+    {
+        char current = postfix_notation[i];
+        if(isdigit(current))
+        {
+            char number[10];
+            last_digit_index(postfix_notation, i, number);
+            stackbuff[++stackpointer] = strtod(number, NULL);
+        }
+        if(get_priority(current) != -1)
+        {
+            counter++;
+            // TODO: Unary minus
+            double second = stackbuff[stackpointer--];
+            double first = stackbuff[stackpointer--];
+            stackbuff[++stackpointer] = execute_operator(current, first,second);
+        }
+    }
+    return stackbuff[stackpointer];
 }
