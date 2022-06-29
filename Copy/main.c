@@ -18,11 +18,9 @@ int main(int argc, char *argv[]) {
   mode = source_stat.st_mode;
 
   int dest = open(filename2, O_CREAT | O_WRONLY | O_TRUNC, mode);
+  printf("%d", copy(source, dest, size));
 
   close(source);
   close(dest);
-
-  printf("%d", copy(source, dest, size));
-
   return 0;
 }
