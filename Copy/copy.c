@@ -40,13 +40,16 @@ size_t get_size(char *path) {
   return stat_buff.st_size;
 }
 
-int copy_regular_file_names(char *source_name, char *dest_name) {
-  printf("From %s to %s", source_name, dest_name);
+int copy_regular_file_names(char *source_name, char *dest_name, bool verbose) {
+  if (verbose) printf("Copying %s to %s\n", source_name, dest_name);
   int dest_fd = open(dest_name, O_CREAT | O_WRONLY | O_TRUNC, get_mode(source_name));
   int source_fd = open(source_name, O_RDONLY);
   int result = copy_regular_file(source_fd, dest_fd, get_size(source_name));
   close(dest_fd);
   close(source_fd);
+  if (result != 0) {
+    fprintf(stderr, "Couldn't copy %s to %s\n", source_name, dest_name);
+  }
   return result;
 }
 char* last_dir_name(char* path) {
@@ -78,11 +81,7 @@ int copy_rec(char *path, char *dest, bool verbose) {
       char source_name[4096];
       sprintf(source_name, "%s%c%s", path, slash, ent->d_name);
       sprintf(dest_name, "%s%c%s", dest, slash, ent->d_name);
-      if (verbose) printf("Copying %s to %s\n", source_name, dest_name);
-      if (copy_regular_file_names(source_name, dest_name) != 0) {
-        fprintf(stderr, "Couldn't copy %s to %s\n", source_name, dest_name);
-        exit(EXIT_FAILURE);
-      }
+      copy_regular_file_names(source_name, dest_name, verbose);
     }
     if (ent->d_type == DT_DIR) {
       if ((strcmp(ent->d_name, ".") != 0) && (strcmp(ent->d_name, "..") != 0)) {
@@ -112,13 +111,16 @@ int copy(char *path, char *dest, bool rec, bool verbose) {
     return -1;
   }
   if (!is_directory(path) && !is_directory(dest)) {
-    return copy_regular_file_names(path, dest);
+    return copy_regular_file_names(path, dest, verbose);
   }
   char pathmax_dest[4096];
   strcpy(pathmax_dest, dest);
   if (!is_directory(path) && is_directory(dest)) {
     sprintf(&pathmax_dest[strlen(pathmax_dest)], "/%s", basename(path));
-    return copy_regular_file_names(path, pathmax_dest);
+    return copy_regular_file_names(path, pathmax_dest,verbose);
+  }
+  if (is_directory(path) && file_exists(dest)) {
+    sprintf(&pathmax_dest[strlen(pathmax_dest)], "/%s", basename(path));
   }
   char pathmax_path[4096];
   strcpy(pathmax_path, path);
