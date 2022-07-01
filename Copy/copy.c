@@ -24,6 +24,10 @@ mode_t get_mode(char *path) {
   return stat_buff.st_mode;
 }
 
+bool is_directory(char *path) {
+  return S_ISDIR(get_mode(path));
+}
+
 size_t get_size(char *path) {
   struct stat stat_buff;
   stat(path, &stat_buff);
@@ -39,7 +43,7 @@ int copy_regular_file_names(char *source_name, char *dest_name) {
   return result;
 }
 
-int copy_rec(char *path, char *dest) {
+int copy_rec(char *path, char *dest, bool verbose) {
   char slash = '/';
   DIR *dir;
   struct dirent *ent;
@@ -47,18 +51,19 @@ int copy_rec(char *path, char *dest) {
   char *NullPositionDest = &dest[strlen(dest)];
   dir = opendir(path);
   if (dir == NULL) {
-    fprintf(stderr, "Couldn't open %s directory", path);
+    fprintf(stderr, "Couldn't open %s directory\n", path);
     exit(EXIT_FAILURE);
   }
   mkdir(dest, get_mode(path));
   while ((ent = readdir(dir)) != NULL) {
     if (ent->d_type == DT_REG) {
-      char dest_name[250];
-      char source_name[250];
+      char dest_name[4096];
+      char source_name[4096];
       sprintf(source_name, "%s%c%s", path, slash, ent->d_name);
       sprintf(dest_name, "%s%c%s", dest, slash, ent->d_name);
+      if (verbose) printf("Copying %s to %s\n", source_name, dest_name);
       if (copy_regular_file_names(source_name, dest_name) != 0) {
-        fprintf(stderr, "Couldn't copy %s to %s", source_name, dest_name);
+        fprintf(stderr, "Couldn't copy %s to %s\n", source_name, dest_name);
         exit(EXIT_FAILURE);
       }
     }
@@ -66,7 +71,7 @@ int copy_rec(char *path, char *dest) {
       if ((strcmp(ent->d_name, ".") != 0) && (strcmp(ent->d_name, "..") != 0)) {
         sprintf(NullPositionPath, "%c%s", slash, ent->d_name);
         sprintf(NullPositionDest, "%c%s", slash, ent->d_name);
-        if (copy_rec(path, dest) != 0) {
+        if (copy_rec(path, dest, verbose) != 0) {
           closedir(dir);
           return -1;
         }
@@ -79,14 +84,16 @@ int copy_rec(char *path, char *dest) {
   return 0;
 }
 
-int copy(char *path, char *dest, bool rec) {
-  struct dirent *ent;
-  char pathmax_path[255 + 1 + sizeof(ent->d_name) + 1];
-  char pathmax_dest[255 + 1 + sizeof(ent->d_name) + 1];
-  if (strlen(path) > 255) {
-    return 1;
+int copy(char *path, char *dest, bool rec, bool verbose) {
+  if (!is_directory(path)) {
+    return copy_regular_file_names(path, dest);
   }
+  if (rec != true && is_directory(path)) {
+    fprintf(stderr, "%s is a directory. Add -r to copy recursively\n", path);
+  }
+  char pathmax_path[4096];
+  char pathmax_dest[4096];
   strcpy(pathmax_path, path);
   strcpy(pathmax_dest, dest);
-  return copy_rec(pathmax_path, pathmax_dest);
+  return copy_rec(pathmax_path, pathmax_dest, verbose);
 }
