@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <libgen.h>
 
 int copy_regular_file(int sourcefd, int destfd, int size) {
   size_t result;
@@ -28,6 +29,11 @@ bool is_directory(char *path) {
   return S_ISDIR(get_mode(path));
 }
 
+bool file_exists (char *path) {
+  struct stat   stat_buffer;
+  return (stat (path, &stat_buffer) == 0);
+}
+
 size_t get_size(char *path) {
   struct stat stat_buff;
   stat(path, &stat_buff);
@@ -35,12 +41,23 @@ size_t get_size(char *path) {
 }
 
 int copy_regular_file_names(char *source_name, char *dest_name) {
+  printf("From %s to %s", source_name, dest_name);
   int dest_fd = open(dest_name, O_CREAT | O_WRONLY | O_TRUNC, get_mode(source_name));
   int source_fd = open(source_name, O_RDONLY);
   int result = copy_regular_file(source_fd, dest_fd, get_size(source_name));
   close(dest_fd);
   close(source_fd);
   return result;
+}
+char* last_dir_name(char* path) {
+  char* result = &path[(strlen(path))];
+  while (result != path && *result == '/') {
+    result--;
+  }
+  while (result != path && *result != '/') {
+    result--;
+  }
+  return result+1;
 }
 
 int copy_rec(char *path, char *dest, bool verbose) {
@@ -85,15 +102,25 @@ int copy_rec(char *path, char *dest, bool verbose) {
 }
 
 int copy(char *path, char *dest, bool rec, bool verbose) {
-  if (!is_directory(path)) {
-    return copy_regular_file_names(path, dest);
-  }
   if (rec != true && is_directory(path)) {
     fprintf(stderr, "%s is a directory. Add -r to copy recursively\n", path);
+    return -1;
+  }
+  if (is_directory(path) && !is_directory(dest) && file_exists(dest))
+  {
+    fprintf(stderr, "Cannot overwrite non-directory %s with directory %s", dest, path);
+    return -1;
+  }
+  if (!is_directory(path) && !is_directory(dest)) {
+    return copy_regular_file_names(path, dest);
+  }
+  char pathmax_dest[4096];
+  strcpy(pathmax_dest, dest);
+  if (!is_directory(path) && is_directory(dest)) {
+    sprintf(&pathmax_dest[strlen(pathmax_dest)], "/%s", basename(path));
+    return copy_regular_file_names(path, pathmax_dest);
   }
   char pathmax_path[4096];
-  char pathmax_dest[4096];
   strcpy(pathmax_path, path);
-  strcpy(pathmax_dest, dest);
   return copy_rec(pathmax_path, pathmax_dest, verbose);
 }
