@@ -29,9 +29,9 @@ bool is_directory(char *path) {
   return S_ISDIR(get_mode(path));
 }
 
-bool file_exists (char *path) {
-  struct stat   stat_buffer;
-  return (stat (path, &stat_buffer) == 0);
+bool file_exists(char *path) {
+  struct stat stat_buffer;
+  return (stat(path, &stat_buffer) == 0);
 }
 
 size_t get_size(char *path) {
@@ -95,8 +95,7 @@ int copy(char *path, char *dest, bool rec, bool verbose) {
     fprintf(stderr, "%s is a directory. Add -r to copy recursively\n", path);
     return -1;
   }
-  if (is_directory(path) && !is_directory(dest) && file_exists(dest))
-  {
+  if (is_directory(path) && !is_directory(dest) && file_exists(dest)) {
     fprintf(stderr, "Cannot overwrite non-directory %s with directory %s", dest, path);
     return -1;
   }
@@ -107,7 +106,7 @@ int copy(char *path, char *dest, bool rec, bool verbose) {
   strcpy(pathmax_dest, dest);
   if (!is_directory(path) && is_directory(dest)) {
     sprintf(&pathmax_dest[strlen(pathmax_dest)], "/%s", basename(path));
-    return copy_regular_file_names(path, pathmax_dest,verbose);
+    return copy_regular_file_names(path, pathmax_dest, verbose);
   }
   if (is_directory(path) && file_exists(dest)) {
     sprintf(&pathmax_dest[strlen(pathmax_dest)], "/%s", basename(path));
