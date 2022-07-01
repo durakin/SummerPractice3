@@ -5,5 +5,4 @@
 
 #include <stdbool.h>
 int copy(char *source_name, char *dest_name, bool rec);
-
 #endif //COPY__COPY_H_

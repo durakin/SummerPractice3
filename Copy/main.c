@@ -8,6 +8,7 @@ int main(int argc, char *argv[]) {
   char* filename1 = argv[1];
   char* filename2 = argv[2];
 
-  copy(filename1, filename2, true);
+  copy("ToCopy", "CopyTo", true);
+
   return 0;
 }
