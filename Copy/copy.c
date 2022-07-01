@@ -52,16 +52,6 @@ int copy_regular_file_names(char *source_name, char *dest_name, bool verbose) {
   }
   return result;
 }
-char* last_dir_name(char* path) {
-  char* result = &path[(strlen(path))];
-  while (result != path && *result == '/') {
-    result--;
-  }
-  while (result != path && *result != '/') {
-    result--;
-  }
-  return result+1;
-}
 
 int copy_rec(char *path, char *dest, bool verbose) {
   char slash = '/';
