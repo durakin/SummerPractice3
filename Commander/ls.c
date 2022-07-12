@@ -21,6 +21,10 @@ bool is_executable(char *realpath_buff) {
   return (get_mode(realpath_buff) & S_IXUSR);
 }
 
+bool is_regular(char *realpath_buff) {
+  return S_ISREG(get_mode(realpath_buff));
+}
+
 int comparator(const void *a, const void *b) {
   struct entry entry1 = *(struct entry *) a;
   struct entry entry2 = *(struct entry *) b;
@@ -48,8 +52,11 @@ int ls(struct entry *buffer, char *full_name) {
       new_entry.type = DIRECTORY;
     } else if (is_executable(realpath_buffer)) {
       new_entry.type = EXECUTABLE;
-    } else
+    } else if (is_regular(realpath_buffer)) {
       new_entry.type = STANDARD;
+    }
+    // TODO: other files must be indexed too
+    else continue;
     buffer[++counter] = new_entry;
   }
   closedir(directory);
