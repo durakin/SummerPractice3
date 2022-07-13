@@ -44,7 +44,7 @@ int ls(struct entry *buffer, char *full_name) {
     struct entry new_entry;
     sprintf(realpath_buffer + strlen(full_name), "/%s%c", current_dirent->d_name, '\0');
     new_entry.size = get_size(realpath_buffer);
-    new_entry.name = malloc(strlen(current_dirent->d_name));
+    new_entry.name = malloc(strlen(current_dirent->d_name)+1);
     strcpy(new_entry.name, current_dirent->d_name);
 
     if (strcmp(new_entry.name, ".") == 0) {
