@@ -60,7 +60,7 @@ int main() {
         // TODO: get params and run
       }
     }
-    if (c == KEY_MOUSE) {
+    /*if (c == KEY_MOUSE) {
       if (getmouse(&event) == OK) {
         if (BUTTON1_CLICKED && event.y >= 1) {
           menu_choose(menu_win, &choice, 1, 1, entries, event.y - 1, entries_count);
@@ -72,6 +72,7 @@ int main() {
         }
       }
     }
+     */
     if (c == KEY_F(10)) {
       break;
     }

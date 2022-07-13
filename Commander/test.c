@@ -4,15 +4,29 @@
 #include "newgui.h"
 #include "ls.h"
 
+void free_mem(struct entry *entries, int entries_count) {
+  for (int i = 0; i < entries_count; i++) {
+    free(entries[i].name);
+  }
+}
+
+void choose_dir(struct menu_context *context, char *name, char *full_name_buffer) {
+  free_mem(context->entries, context->entry_count);
+  realpath(name, full_name_buffer);
+  context->entry_count = ls(context->entries, full_name_buffer);
+  context->current_choice = 0;
+  context->first_visible = 0;
+  print_list(context);
+}
+
+
 int main() {
-  int choice = 0;
   int c;
   initscr();
   clear();
   noecho();
   cbreak();
   start_color();
-  MEVENT event;
   init_pair(1, COLOR_CYAN, COLOR_BLACK);
   int y, x, yMax, xMax;
   getyx(stdscr, y, x);
@@ -21,15 +35,13 @@ int main() {
   refresh();
   box(main, 0, 0);
   wrefresh(main);
-  getch();
-  struct entry entries[100];
+  struct entry entries[10000];
   char full_name_buffer[4096];
-  int entries_count = ls(entries, "../../");
   struct menu_context context;
-  init_menu(&context, full_name_buffer, entries, entries_count, 3, 1, 1, yMax - 2, xMax - 2);
+  init_menu(&context, NULL, entries, 0, 0, 1, 1, yMax - 2, xMax - 2);
+  choose_dir(&context, ".", full_name_buffer);
   refresh();
   wrefresh(context.window);
-  getch();
   print_list(&context);
 
   while (1) {
@@ -40,31 +52,21 @@ int main() {
     if (c == KEY_DOWN) {
       menu_down(&context);
     }
-    /*if (c == 'F' || c == 'f') {
-      if (entries[choice].type == DIRECTORY || entries[choice].type == UP_DIR) {
+    if (c == KEY_RIGHT) {
+      if (entries[context.current_choice].type == DIRECTORY || entries[context.current_choice].type == UP_DIR) {
         char relative_path[4352];
-        sprintf(relative_path, "%s/%s", full_name_buffer, entries[choice].name);
-        choice = 0;
-        choose_dir(menu_win, entries, &entries_count, relative_path, full_name_buffer);
+        sprintf(relative_path, "%s/%s", full_name_buffer, entries[context.current_choice].name);
+        choose_dir(&context, relative_path, full_name_buffer);
       }
-      if (entries[choice].type == EXECUTABLE) {
+      if (entries[context.current_choice].type == EXECUTABLE) {
         // TODO: get params and run
       }
     }
-     */
-    /*if (c == KEY_MOUSE) {
-      if (getmouse(&event) == OK) {
-        if (BUTTON1_CLICKED && event.y >= 1) {
-          menu_choose(menu_win, &choice, 1, 1, entries, event.y - 1, entries_count);
-        } else if (BUTTON1_DOUBLE_CLICKED) {
-          char relative_path[4352];
-          sprintf(relative_path, "%s/%s", full_name_buffer, entries[choice].name);
-          choice = 0;
-          choose_dir(menu_win, entries, &entries_count, relative_path, full_name_buffer);
-        }
-      }
+    if (c == KEY_LEFT) {
+      char relative_path[4352];
+      sprintf(relative_path, "%s/%s", full_name_buffer, "..");
+      choose_dir(&context, relative_path, full_name_buffer);
     }
-     */
     if (c == KEY_F(10)) {
       break;
     }
