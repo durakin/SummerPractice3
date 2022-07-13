@@ -35,7 +35,7 @@ int ls(struct entry *buffer, char *full_name) {
   DIR *directory;
   struct dirent *current_dirent;
   directory = opendir(full_name);
-  int counter = -1;
+  int counter = 0;
   char realpath_buffer[4096];
   realpath_buffer[0] = '\0';
   strcpy(realpath_buffer, full_name);
@@ -43,9 +43,13 @@ int ls(struct entry *buffer, char *full_name) {
   while ((current_dirent = readdir(directory)) != NULL) {
     struct entry new_entry;
     sprintf(realpath_buffer + strlen(full_name), "/%s%c", current_dirent->d_name, '\0');
-
     new_entry.size = get_size(realpath_buffer);
-    new_entry.name = current_dirent->d_name;
+    new_entry.name = malloc(strlen(current_dirent->d_name));
+    strcpy(new_entry.name, current_dirent->d_name);
+
+    if (strcmp(new_entry.name, ".") == 0) {
+      continue;
+    }
     if (strcmp(new_entry.name, "..") == 0) {
       new_entry.type = UP_DIR;
     } else if (is_directory(realpath_buffer)) {
@@ -57,7 +61,8 @@ int ls(struct entry *buffer, char *full_name) {
     }
     // TODO: other files must be indexed too
     else continue;
-    buffer[++counter] = new_entry;
+    buffer[counter] = new_entry;
+    counter++;
   }
   closedir(directory);
   qsort(buffer, counter, sizeof(struct entry), comparator);
