@@ -10,12 +10,17 @@ void free_mem(struct entry *entries, int entries_count) {
   }
 }
 
-void choose_dir(struct menu_context *context, char *name, char *full_name_buffer) {
+void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, char *full_name_buffer) {
   free_mem(context->entries, context->entry_count);
   realpath(name, full_name_buffer);
   context->entry_count = ls(context->entries, full_name_buffer);
   context->current_choice = 0;
   context->first_visible = 0;
+  char* new_window_name = get_beautiful_name(full_name_buffer, getmaxx(main_window) - 2);
+  box(main_window, 0, 0);
+  mvwprintw(main_window, 0, 1, new_window_name);
+  if (new_window_name!=NULL) free(new_window_name);
+  wrefresh(main_window);
   print_list(context);
 }
 
@@ -39,7 +44,7 @@ int main() {
   char full_name_buffer[4096];
   struct menu_context context;
   init_menu(&context, NULL, entries, 0, 0, 1, 1, yMax - 2, xMax - 2);
-  choose_dir(&context, ".", full_name_buffer);
+  choose_dir(main, &context, ".", full_name_buffer);
   refresh();
   wrefresh(context.window);
   print_list(&context);
@@ -56,7 +61,7 @@ int main() {
       if (entries[context.current_choice].type == DIRECTORY || entries[context.current_choice].type == UP_DIR) {
         char relative_path[4352];
         sprintf(relative_path, "%s/%s", full_name_buffer, entries[context.current_choice].name);
-        choose_dir(&context, relative_path, full_name_buffer);
+        choose_dir(main, &context, relative_path, full_name_buffer);
       }
       if (entries[context.current_choice].type == EXECUTABLE) {
         // TODO: get params and run
@@ -65,7 +70,7 @@ int main() {
     if (c == KEY_LEFT) {
       char relative_path[4352];
       sprintf(relative_path, "%s/%s", full_name_buffer, "..");
-      choose_dir(&context, relative_path, full_name_buffer);
+      choose_dir(main, &context, relative_path, full_name_buffer);
     }
     if (c == KEY_F(10)) {
       break;

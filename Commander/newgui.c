@@ -1,4 +1,33 @@
+#include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
 #include "newgui.h"
+
+char* get_beautiful_name(char* path, int max_length) {
+  bool in_home = false;
+  //TODO: Must allocate less memory
+  char* result = malloc(4096);
+  int length = strlen(path);
+  char* homedir = getenv("HOME");
+  if (homedir!=NULL) {
+    if (strncmp(homedir, path, strlen(homedir)) == 0 && path[strlen(homedir)] == '/') {
+      length = 1 + length - strlen(homedir);
+      in_home = true;
+    }
+  }
+  if (length <= max_length) {
+    //result = (char*)malloc(length);
+    if (in_home) sprintf(result, "~%s", path+strlen(homedir));
+    else sprintf(result, "%s", path);
+    return result;
+  }
+  else if (max_length > 2) {
+    //result = (char*) malloc(max_length);
+    sprintf(result, "..%s", path+strlen(path) - max_length + 2);
+    return result;
+  }
+  return NULL;
+}
 
 bool is_beyond_list(struct menu_context* context, int index) {
   return index - context->first_visible >= context->max_y;
@@ -27,7 +56,6 @@ void print_entry(struct menu_context* context, int index) {
   int add_attr = (context->current_choice == index) ? A_STANDOUT : 0;
   wattron(context->window, attrs[entry_to_print.type] | add_attr);
   mvwprintw(window, index-context->first_visible, 0, formats[entry_to_print.type], entry_to_print.name, entry_to_print.size);
-  wrefresh(window);
   wattroff(window, attrs[entry_to_print.type] | add_attr);
 }
 
@@ -37,6 +65,7 @@ void print_list(struct menu_context* context) {
   for (int i = context->first_visible; i < context->entry_count && !is_beyond_list(context, i); i++) {
     print_entry(context, i);
   }
+  wrefresh(window);
 }
 
 void menu_up(struct menu_context* context) {
@@ -48,6 +77,7 @@ void menu_up(struct menu_context* context) {
   }
   print_entry(context, context->current_choice);
   print_entry(context, context->current_choice+1);
+  wrefresh(context->window);
 }
 
 void menu_down(struct menu_context* context) {
@@ -59,4 +89,5 @@ void menu_down(struct menu_context* context) {
   }
   print_entry(context, context->current_choice);
   print_entry(context, context->current_choice-1);
+  wrefresh(context->window);
 }

@@ -15,6 +15,8 @@ struct menu_context {
   int first_visible;
 };
 
+char* get_beautiful_name(char* path, int max_length);
+
 void init_menu(struct menu_context* this, char* dir_path, struct entry* entries, int entry_count, int current_choice, int start_y, int start_x,
                int max_y, int max_x);
 
