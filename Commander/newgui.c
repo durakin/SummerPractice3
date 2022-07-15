@@ -6,11 +6,13 @@
 void convert_size(size_t size, char* buffer) {
   char units[4][4] = { "B", "KiB", "MiB", "GiB" };
   int unit_index = 0;
-  while (size / 1024 >= 1 && unit_index <= 3) {
+  double converted_size;
+  converted_size = size;
+  while (converted_size / 1024 > 1 && unit_index <= 3) {
     unit_index++;
-    size/=1024;
+    converted_size/=1024.0;
   }
-  sprintf(buffer, "%zu %s", size, units[unit_index]);
+  sprintf(buffer, "%.2f %s", converted_size, units[unit_index]);
 }
 
 void get_beautiful_name(char* path, int max_length, char* buffer) {
@@ -64,12 +66,12 @@ void cut_name(char* name, int max_length, char* buffer) {
 void prepare_entry_string(struct entry entry_to_print, int max_length, char* buffer) {
   char appends[4] = {'/', '/', '*', ' '};
   char format[40];
-  int name_length = max_length - 10;
-  sprintf(format, "%c%%-%ds%%-%ds\n", appends[entry_to_print.type], name_length, 10);
-  char size[10];
+  int name_length = max_length - 14;
+  sprintf(format, "%c%%-%ds%%-%ds\n", appends[entry_to_print.type], name_length, 14);
+  char size[14];
   char name_buff[255];
   convert_size(entry_to_print.size, size);
-  cut_name(entry_to_print.name, max_length-11, name_buff);
+  cut_name(entry_to_print.name, max_length-15, name_buff);
   sprintf(buffer, format, name_buff, size);
 }
 
