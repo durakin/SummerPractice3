@@ -5,15 +5,52 @@
 #include "newgui.h"
 #include "ls.h"
 
+void free_buffer(char** buffer, int buffer_counter) {
+  for (int i = 0; i < buffer_counter; i++) {
+    free(buffer[i]);
+  }
+  free(buffer);
+}
+
+char** file_to_buffer(char** buffer, char* realpath,  int* buffer_counter) {
+  buffer = (char**) realloc(buffer, sizeof(char*) * ((*buffer_counter)+1));
+  buffer[*buffer_counter] = (char*) malloc(strlen(realpath)+1);
+  strcpy(buffer[*buffer_counter], realpath);
+  (*buffer_counter)++;
+  return buffer;
+}
+
+char** file_from_buffer(char** buffer, int file_in_buffer_index, int* buffer_counter) {
+  free(buffer[file_in_buffer_index]);
+  buffer[file_in_buffer_index] = buffer[*buffer_counter-1];
+  (*buffer_counter)--;
+  return (char**) realloc(buffer, sizeof(char*) * ((*buffer_counter)));
+}
+
+char** handle_buffer(char** buffer, char* path, int* buffer_counter) {
+  char realpath_buffer[4096];
+  int file_in_buffer_index = -1;
+  realpath(path, realpath_buffer);
+  for (int i = 0; i < *buffer_counter; i++) {
+    if (strcmp(buffer[i], realpath_buffer) == 0) {
+      file_in_buffer_index = i;
+      break;
+    }
+  }
+  if (file_in_buffer_index != -1) {
+    return file_from_buffer(buffer, file_in_buffer_index, buffer_counter);
+  }
+  else return file_to_buffer(buffer, realpath_buffer, buffer_counter);
+}
+
 void free_mem(struct entry *entries, int entries_count) {
   for (int i = 0; i < entries_count; i++) {
     free(entries[i].name);
   }
 }
 
-void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, char *full_name_buffer) {
-  //int statfs(const char *path, struct statfs *buf);
 
+void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, char *full_name_buffer) {
   free_mem(context->entries, context->entry_count);
   realpath(name, full_name_buffer);
   struct statvfs stat;
@@ -37,7 +74,8 @@ void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, c
 
 int main() {
   int chosen_tool;
-  char chosen_file_name[4096];
+  char** files_in_buffer_path = NULL;
+  int files_in_buffer_count = 0;
   int c;
   initscr();
   clear();
@@ -88,13 +126,23 @@ int main() {
       if (entries[context.current_choice].type != UP_DIR) {
         char relative_path[4352];
         sprintf(relative_path, "%s/%s", full_name_buffer, entries[context.current_choice].name);
-        realpath(relative_path, chosen_file_name);
+        files_in_buffer_path = handle_buffer(files_in_buffer_path, relative_path, &files_in_buffer_count);
       }
+    }
+    if (c == KEY_F(2)) {
+      FILE *out_file = fopen("buffer", "w"); // write only
+      for (int i = 0; i < files_in_buffer_count; i++) {
+        fprintf(out_file, "%s\n", files_in_buffer_path[i]);
+      }
+      fclose(out_file);
     }
     if (c == KEY_F(10)) {
       break;
     }
   }
   endwin();
+  free_buffer(files_in_buffer_path, files_in_buffer_count);
+  files_in_buffer_path = NULL;
+  files_in_buffer_count = 0;
   return 0;
 }
