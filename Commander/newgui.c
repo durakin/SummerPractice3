@@ -3,10 +3,19 @@
 #include <string.h>
 #include "newgui.h"
 
-char* get_beautiful_name(char* path, int max_length) {
+void convert_size(size_t size, char* buffer) {
+  char units[4][4] = { "B", "KiB", "MiB", "GiB" };
+  int unit_index = 0;
+  while (size / 1024 >= 1 && unit_index <= 3) {
+    unit_index++;
+    size/=1024;
+  }
+  sprintf(buffer, "%zu %s", size, units[unit_index]);
+}
+
+void get_beautiful_name(char* path, int max_length, char* buffer) {
   bool in_home = false;
   //TODO: Must allocate less memory
-  char* result = malloc(4096);
   int length = strlen(path);
   char* homedir = getenv("HOME");
   if (homedir!=NULL) {
@@ -16,17 +25,14 @@ char* get_beautiful_name(char* path, int max_length) {
     }
   }
   if (length <= max_length) {
-    //result = (char*)malloc(length);
-    if (in_home) sprintf(result, "~%s", path+strlen(homedir));
-    else sprintf(result, "%s", path);
-    return result;
+    if (in_home) sprintf(buffer, "~%s", path+strlen(homedir));
+    else sprintf(buffer, "%s", path);
+    return;
   }
   else if (max_length > 2) {
-    //result = (char*) malloc(max_length);
-    sprintf(result, "..%s", path+strlen(path) - max_length + 2);
-    return result;
+    sprintf(buffer, "..%s", path+strlen(path) - max_length + 2);
+    return;
   }
-  return NULL;
 }
 
 bool is_beyond_list(struct menu_context* context, int index) {
@@ -47,15 +53,36 @@ void init_menu(struct menu_context* this, char* dir_path, struct entry* entries,
   this->first_visible = 0;
 }
 
+void cut_name(char* name, int max_length, char* buffer) {
+  if (strlen(name) <= max_length) {
+    sprintf(buffer, "%s", name);
+    return;
+  }
+  sprintf(buffer, "..%s", name + strlen(name) - max_length +2);
+}
+
+void prepare_entry_string(struct entry entry_to_print, int max_length, char* buffer) {
+  char appends[4] = {'/', '/', '*', ' '};
+  char format[40];
+  int name_length = max_length - 10;
+  sprintf(format, "%c%%-%ds%%-%ds\n", appends[entry_to_print.type], name_length, 10);
+  char size[10];
+  char name_buff[255];
+  convert_size(entry_to_print.size, size);
+  cut_name(entry_to_print.name, max_length-11, name_buff);
+  sprintf(buffer, format, name_buff, size);
+}
+
 void print_entry(struct menu_context* context, int index) {
   //TODO: need to cut name depending on max_x
-  char formats[4][10] = {"/%s %d", "/%s %d", "*%s %d", " %s %d"};
   int attrs[4] = {A_BOLD, A_BOLD, COLOR_PAIR(1), A_NORMAL};
   struct entry entry_to_print = context->entries[index];
   WINDOW* window = context->window;
   int add_attr = (context->current_choice == index) ? A_STANDOUT : 0;
   wattron(context->window, attrs[entry_to_print.type] | add_attr);
-  mvwprintw(window, index-context->first_visible, 0, formats[entry_to_print.type], entry_to_print.name, entry_to_print.size);
+  char entry_string[255];
+  prepare_entry_string(entry_to_print, context->max_x-2, entry_string);
+  mvwprintw(window, index-context->first_visible, 0, "%s", entry_string);
   wattroff(window, attrs[entry_to_print.type] | add_attr);
 }
 

@@ -16,10 +16,10 @@ void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, c
   context->entry_count = ls(context->entries, full_name_buffer);
   context->current_choice = 0;
   context->first_visible = 0;
-  char* new_window_name = get_beautiful_name(full_name_buffer, getmaxx(main_window) - 2);
+  char new_window_name[4096];
+  get_beautiful_name(full_name_buffer, getmaxx(main_window) - 2, new_window_name);
   box(main_window, 0, 0);
   mvwprintw(main_window, 0, 1, new_window_name);
-  if (new_window_name!=NULL) free(new_window_name);
   wrefresh(main_window);
   print_list(context);
 }
