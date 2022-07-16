@@ -5,6 +5,7 @@
 #include "newgui.h"
 #include "ls.h"
 #include "clipboard.h"
+#include "copy.h"
 
 
 void free_mem(struct entry *entries, int entries_count) {
@@ -100,11 +101,19 @@ int main() {
     if (c == KEY_F(1)) {
       if (chosen_entries[chosen_context->current_choice].type != UP_DIR) {
         char relative_path[4352];
-        sprintf(relative_path, "%s/%s", chosen_name_buffer, entries_left[chosen_context->current_choice].name);
+        sprintf(relative_path, "%s/%s", chosen_name_buffer, chosen_entries[chosen_context->current_choice].name);
         files_in_buffer_path = handle_buffer(files_in_buffer_path, relative_path, &files_in_buffer_count);
       }
     }
     if (c == KEY_F(2)) {
+      for (int i = 0; i < files_in_buffer_count; i++) {
+        copy(files_in_buffer_path[i], chosen_name_buffer, true, false);
+      }
+      free_buffer(files_in_buffer_path, files_in_buffer_count);
+      files_in_buffer_path = NULL;
+      files_in_buffer_count = 0;
+    }
+    if (c == KEY_F(11)) {
       FILE *out_file = fopen("buffer", "w"); // write only
       for (int i = 0; i < files_in_buffer_count; i++) {
         fprintf(out_file, "%s\n", files_in_buffer_path[i]);
@@ -128,6 +137,8 @@ int main() {
     }
   }
   endwin();
+  free_mem(entries_left, context1.entry_count);
+  free_mem(entries_right, context2.entry_count);
   free_buffer(files_in_buffer_path, files_in_buffer_count);
   files_in_buffer_path = NULL;
   files_in_buffer_count = 0;
