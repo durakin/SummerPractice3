@@ -4,44 +4,8 @@
 #include <sys/statvfs.h>
 #include "newgui.h"
 #include "ls.h"
+#include "clipboard.h"
 
-void free_buffer(char** buffer, int buffer_counter) {
-  for (int i = 0; i < buffer_counter; i++) {
-    free(buffer[i]);
-  }
-  free(buffer);
-}
-
-char** file_to_buffer(char** buffer, char* realpath,  int* buffer_counter) {
-  buffer = (char**) realloc(buffer, sizeof(char*) * ((*buffer_counter)+1));
-  buffer[*buffer_counter] = (char*) malloc(strlen(realpath)+1);
-  strcpy(buffer[*buffer_counter], realpath);
-  (*buffer_counter)++;
-  return buffer;
-}
-
-char** file_from_buffer(char** buffer, int file_in_buffer_index, int* buffer_counter) {
-  free(buffer[file_in_buffer_index]);
-  buffer[file_in_buffer_index] = buffer[*buffer_counter-1];
-  (*buffer_counter)--;
-  return (char**) realloc(buffer, sizeof(char*) * ((*buffer_counter)));
-}
-
-char** handle_buffer(char** buffer, char* path, int* buffer_counter) {
-  char realpath_buffer[4096];
-  int file_in_buffer_index = -1;
-  realpath(path, realpath_buffer);
-  for (int i = 0; i < *buffer_counter; i++) {
-    if (strcmp(buffer[i], realpath_buffer) == 0) {
-      file_in_buffer_index = i;
-      break;
-    }
-  }
-  if (file_in_buffer_index != -1) {
-    return file_from_buffer(buffer, file_in_buffer_index, buffer_counter);
-  }
-  else return file_to_buffer(buffer, realpath_buffer, buffer_counter);
-}
 
 void free_mem(struct entry *entries, int entries_count) {
   for (int i = 0; i < entries_count; i++) {
@@ -73,7 +37,6 @@ void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, c
 
 
 int main() {
-  int chosen_tool;
   char** files_in_buffer_path = NULL;
   int files_in_buffer_count = 0;
   int c;
@@ -86,46 +49,59 @@ int main() {
   int y, x, yMax, xMax;
   getyx(stdscr, y, x);
   getmaxyx(stdscr, yMax, xMax);
-  WINDOW *main = newwin(yMax, xMax, 0, 0);
+  xMax/=2;
+  WINDOW *left = newwin(yMax, xMax, 0, 0);
+  WINDOW *right = newwin(yMax, xMax, 0, xMax);
   refresh();
-  box(main, 0, 0);
-  wrefresh(main);
-  struct entry entries[10000];
-  char full_name_buffer[4096];
-  struct menu_context context;
-  init_menu(&context, NULL, entries, 0, 0, 1, 1, yMax - 2, xMax - 2);
-  choose_dir(main, &context, ".", full_name_buffer);
+  //box(left, 0, 0);
+  //box(right, 0, 0);
+  wrefresh(left);
+  wrefresh(right);
+  struct entry entries_left[10000];
+  struct entry entries_right[10000];
+  char full_name_buffer1[4096];
+  char full_name_buffer2[4096];
+  struct menu_context context1;
+  struct menu_context context2;
+  init_menu(&context1, NULL, entries_left, 0, 0, 1, 1, yMax - 2, xMax - 2);
+  init_menu(&context2, NULL, entries_right, 0, 0, 1, xMax+1, yMax - 2, xMax - 2);
+  choose_dir(left, &context1, ".", full_name_buffer1);
+  choose_dir(right, &context2, ".", full_name_buffer2);
   refresh();
-  wrefresh(context.window);
-  print_list(&context);
+  wrefresh(context1.window);
+  wrefresh(context2.window);
+  struct menu_context* chosen_context = &context1;
+  WINDOW* chosen_window = left;
+  char* chosen_name_buffer = full_name_buffer1;
+  struct entry *chosen_entries = entries_left;
 
   while (1) {
-    c = wgetch(context.window);
+    c = wgetch(chosen_context->window);
     if (c == KEY_UP) {
-      menu_up(&context);
+      menu_up(chosen_context);
     }
     if (c == KEY_DOWN) {
-      menu_down(&context);
+      menu_down(chosen_context);
     }
     if (c == KEY_RIGHT) {
-      if (entries[context.current_choice].type == DIRECTORY || entries[context.current_choice].type == UP_DIR) {
+      if (chosen_entries[chosen_context->current_choice].type == DIRECTORY || chosen_entries[chosen_context->current_choice].type == UP_DIR) {
         char relative_path[4352];
-        sprintf(relative_path, "%s/%s", full_name_buffer, entries[context.current_choice].name);
-        choose_dir(main, &context, relative_path, full_name_buffer);
+        sprintf(relative_path, "%s/%s", chosen_name_buffer, chosen_entries[chosen_context->current_choice].name);
+        choose_dir(chosen_window, chosen_context, relative_path, chosen_name_buffer);
       }
-      if (entries[context.current_choice].type == EXECUTABLE) {
+      if (chosen_entries[chosen_context->current_choice].type == EXECUTABLE) {
         // TODO: get params and run
       }
     }
     if (c == KEY_LEFT) {
       char relative_path[4352];
-      sprintf(relative_path, "%s/%s", full_name_buffer, "..");
-      choose_dir(main, &context, relative_path, full_name_buffer);
+      sprintf(relative_path, "%s/%s", chosen_name_buffer, "..");
+      choose_dir(chosen_window, chosen_context, relative_path, chosen_name_buffer);
     }
     if (c == KEY_F(1)) {
-      if (entries[context.current_choice].type != UP_DIR) {
+      if (chosen_entries[chosen_context->current_choice].type != UP_DIR) {
         char relative_path[4352];
-        sprintf(relative_path, "%s/%s", full_name_buffer, entries[context.current_choice].name);
+        sprintf(relative_path, "%s/%s", chosen_name_buffer, entries_left[chosen_context->current_choice].name);
         files_in_buffer_path = handle_buffer(files_in_buffer_path, relative_path, &files_in_buffer_count);
       }
     }
@@ -135,6 +111,18 @@ int main() {
         fprintf(out_file, "%s\n", files_in_buffer_path[i]);
       }
       fclose(out_file);
+    }
+    if (c == KEY_SRIGHT) {
+      chosen_window = right;
+      chosen_context = &context2;
+      chosen_entries = entries_right;
+      chosen_name_buffer= full_name_buffer2;
+    }
+    if (c == KEY_SLEFT) {
+      chosen_window = left;
+      chosen_context = &context1;
+      chosen_entries = entries_left;
+      chosen_name_buffer= full_name_buffer1;
     }
     if (c == KEY_F(10)) {
       break;
