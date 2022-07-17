@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -Wall
+LDFLAGS= -lncurses
 ifeq ($(PREFIX),)
     PREFIX := /usr/local/bin
 endif
@@ -21,7 +22,7 @@ rm.o: rm.c rm.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build: main.c copy.o ls.o gui.o clipboard.o rm.o
-	$(CC) $(CFLAGS) $^ -o AlikCommander -lncurses
+	$(CC) $(CFLAGS) $^ -o AlikCommander $(LDFLAGS)
 
 install:
 	cp AlikCommander $(PREFIX)/AlikCommander
