@@ -6,14 +6,16 @@
 #include "ls.h"
 #include "clipboard.h"
 #include "copy.h"
+#include "rm.h"
 
+#define MAX_REALPATH 4096
+#define MAX_FILENAME 256
 
 void free_mem(struct entry *entries, int entries_count) {
   for (int i = 0; i < entries_count; i++) {
     free(entries[i].name);
   }
 }
-
 
 void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, char *full_name_buffer) {
   free_mem(context->entries, context->entry_count);
@@ -23,7 +25,7 @@ void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, c
   context->entry_count = ls(context->entries, full_name_buffer);
   context->current_choice = 0;
   context->first_visible = 0;
-  char new_window_name[4096];
+  char new_window_name[MAX_REALPATH];
   get_beautiful_name(full_name_buffer, getmaxx(main_window) - 2, new_window_name);
   box(main_window, 0, 0);
   mvwprintw(main_window, 0, 1, new_window_name);
@@ -59,8 +61,8 @@ int main() {
   wrefresh(right);
   struct entry entries_left[10000];
   struct entry entries_right[10000];
-  char full_name_buffer1[4096];
-  char full_name_buffer2[4096];
+  char full_name_buffer1[MAX_REALPATH];
+  char full_name_buffer2[MAX_REALPATH];
   struct menu_context context1;
   struct menu_context context2;
   init_menu(&context1, NULL, entries_left, 0, 0, 1, 1, yMax - 2, xMax - 2);
@@ -85,7 +87,7 @@ int main() {
     }
     if (c == KEY_RIGHT) {
       if (chosen_entries[chosen_context->current_choice].type == DIRECTORY || chosen_entries[chosen_context->current_choice].type == UP_DIR) {
-        char relative_path[4352];
+        char relative_path[MAX_REALPATH + MAX_FILENAME];
         sprintf(relative_path, "%s/%s", chosen_name_buffer, chosen_entries[chosen_context->current_choice].name);
         choose_dir(chosen_window, chosen_context, relative_path, chosen_name_buffer);
       }
@@ -94,13 +96,13 @@ int main() {
       }
     }
     if (c == KEY_LEFT) {
-      char relative_path[4352];
+      char relative_path[MAX_REALPATH + MAX_FILENAME];
       sprintf(relative_path, "%s/%s", chosen_name_buffer, "..");
       choose_dir(chosen_window, chosen_context, relative_path, chosen_name_buffer);
     }
     if (c == KEY_F(1)) {
       if (chosen_entries[chosen_context->current_choice].type != UP_DIR) {
-        char relative_path[4352];
+        char relative_path[MAX_REALPATH + MAX_FILENAME];
         sprintf(relative_path, "%s/%s", chosen_name_buffer, chosen_entries[chosen_context->current_choice].name);
         files_in_buffer_path = handle_buffer(files_in_buffer_path, relative_path, &files_in_buffer_count);
       }
@@ -113,12 +115,28 @@ int main() {
       files_in_buffer_path = NULL;
       files_in_buffer_count = 0;
     }
-    if (c == KEY_F(11)) {
-      FILE *out_file = fopen("buffer", "w"); // write only
+    if (c == KEY_F(3)) {
+      char output_path[MAX_REALPATH];
+      sprintf(output_path, "%s/%s", chosen_name_buffer, "buffer");
+      FILE *out_file = fopen(output_path, "w"); // write only
       for (int i = 0; i < files_in_buffer_count; i++) {
         fprintf(out_file, "%s\n", files_in_buffer_path[i]);
       }
       fclose(out_file);
+    }
+    if (c == KEY_F(4)) {
+      if (chosen_entries[chosen_context->current_choice].type != UP_DIR) {
+        char relative_path[MAX_REALPATH + MAX_FILENAME];
+        sprintf(relative_path, "%s/%s", chosen_name_buffer, chosen_entries[chosen_context->current_choice].name);
+        char realpath_to_rm[MAX_REALPATH];
+        realpath(relative_path, realpath_to_rm);
+        rm(realpath_to_rm);
+      }
+    }
+    if (c == KEY_F(5)) {
+      char rellative_path[MAX_REALPATH + MAX_FILENAME];
+      sprintf(rellative_path, "%s/.", chosen_name_buffer);
+      choose_dir(chosen_window, chosen_context, rellative_path, chosen_name_buffer);
     }
     if (c == KEY_SRIGHT) {
       chosen_window = right;

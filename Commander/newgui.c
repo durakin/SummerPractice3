@@ -4,11 +4,11 @@
 #include "newgui.h"
 
 void convert_size(size_t size, char* buffer) {
-  char units[4][4] = { "B", "KiB", "MiB", "GiB" };
+  char units[5][4] = { "B", "KiB", "MiB", "GiB", "TiB" };
   int unit_index = 0;
   double converted_size;
   converted_size = size;
-  while (converted_size / 1024 > 1 && unit_index <= 3) {
+  while (converted_size / 1024 > 1 && unit_index <= 4) {
     unit_index++;
     converted_size/=1024.0;
   }
@@ -17,7 +17,6 @@ void convert_size(size_t size, char* buffer) {
 
 void get_beautiful_name(char* path, int max_length, char* buffer) {
   bool in_home = false;
-  //TODO: Must allocate less memory
   int length = strlen(path);
   char* homedir = getenv("HOME");
   if (homedir!=NULL) {
@@ -76,7 +75,6 @@ void prepare_entry_string(struct entry entry_to_print, int max_length, char* buf
 }
 
 void print_entry(struct menu_context* context, int index) {
-  //TODO: need to cut name depending on max_x
   int attrs[4] = {A_BOLD, A_BOLD, COLOR_PAIR(1), A_NORMAL};
   struct entry entry_to_print = context->entries[index];
   WINDOW* window = context->window;
