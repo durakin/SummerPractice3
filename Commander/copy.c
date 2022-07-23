@@ -1,4 +1,3 @@
-#include "copy.h"
 #include <sys/sendfile.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -9,6 +8,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <libgen.h>
+#include "copy.h"
+
+#define MAX_REALPATH 4096
 
 int copy_regular_file(int sourcefd, int destfd, int size) {
   size_t result;
@@ -67,8 +69,8 @@ int copy_rec(char *path, char *dest, bool verbose) {
   mkdir(dest, copy_get_mode(path));
   while ((ent = readdir(dir)) != NULL) {
     if (ent->d_type == DT_REG) {
-      char dest_name[4096];
-      char source_name[4096];
+      char dest_name[MAX_REALPATH];
+      char source_name[MAX_REALPATH];
       sprintf(source_name, "%s%c%s", path, slash, ent->d_name);
       sprintf(dest_name, "%s%c%s", dest, slash, ent->d_name);
       copy_regular_file_names(source_name, dest_name, verbose);
@@ -102,7 +104,7 @@ int copy(char *path, char *dest, bool rec, bool verbose) {
   if (!copy_is_directory(path) && !copy_is_directory(dest)) {
     return copy_regular_file_names(path, dest, verbose);
   }
-  char pathmax_dest[4096];
+  char pathmax_dest[MAX_REALPATH];
   strcpy(pathmax_dest, dest);
   if (!copy_is_directory(path) && copy_is_directory(dest)) {
     sprintf(&pathmax_dest[strlen(pathmax_dest)], "/%s", basename(path));
@@ -111,7 +113,7 @@ int copy(char *path, char *dest, bool rec, bool verbose) {
   if (copy_is_directory(path) && file_exists(dest)) {
     sprintf(&pathmax_dest[strlen(pathmax_dest)], "/%s", basename(path));
   }
-  char pathmax_path[4096];
+  char pathmax_path[MAX_REALPATH];
   strcpy(pathmax_path, path);
   return copy_rec(pathmax_path, pathmax_dest, verbose);
 }

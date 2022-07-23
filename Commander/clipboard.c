@@ -1,7 +1,9 @@
 #include <string.h>
 #include <stdlib.h>
-
 #include "clipboard.h"
+
+#define MAX_REALPATH 4096
+
 void free_buffer(char **buffer, int buffer_counter) {
   for (int i = 0; i < buffer_counter; i++) {
     free(buffer[i]);
@@ -25,7 +27,7 @@ char **file_from_buffer(char **buffer, int file_in_buffer_index, int *buffer_cou
 }
 
 char **handle_buffer(char **buffer, char *path, int *buffer_counter) {
-  char realpath_buffer[4096];
+  char realpath_buffer[MAX_REALPATH];
   int file_in_buffer_index = -1;
   realpath(path, realpath_buffer);
   for (int i = 0; i < *buffer_counter; i++) {

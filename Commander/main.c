@@ -17,7 +17,7 @@ void free_mem(struct entry *entries, int entries_count) {
   }
 }
 
-void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, char *full_name_buffer) {
+void choose_dir(WINDOW *main_window, struct menu_context *context, char *name, char *full_name_buffer) {
   free_mem(context->entries, context->entry_count);
   realpath(name, full_name_buffer);
   struct statvfs stat;
@@ -32,15 +32,14 @@ void choose_dir(WINDOW* main_window, struct menu_context *context, char *name, c
   char space[12];
   convert_size(stat.f_bsize * stat.f_blocks, space);
   char freespace[12];
-  convert_size( stat.f_bsize * stat.f_bfree, freespace);
-  mvwprintw(main_window, context->max_y+1, 1, "%s/%s", freespace, space);
+  convert_size(stat.f_bsize * stat.f_bfree, freespace);
+  mvwprintw(main_window, context->max_y + 1, 1, "%s/%s", freespace, space);
   wrefresh(main_window);
   print_list(context);
 }
 
-
 int main() {
-  char** files_in_buffer_path = NULL;
+  char **files_in_buffer_path = NULL;
   int files_in_buffer_count = 0;
   int c;
   initscr();
@@ -51,7 +50,7 @@ int main() {
   init_pair(1, COLOR_CYAN, COLOR_BLACK);
   int yMax, xMax;
   getmaxyx(stdscr, yMax, xMax);
-  xMax/=2;
+  xMax /= 2;
   WINDOW *left = newwin(yMax, xMax, 0, 0);
   WINDOW *right = newwin(yMax, xMax, 0, xMax);
   refresh();
@@ -66,15 +65,15 @@ int main() {
   struct menu_context context1;
   struct menu_context context2;
   init_menu(&context1, NULL, entries_left, 0, 0, 1, 1, yMax - 2, xMax - 2);
-  init_menu(&context2, NULL, entries_right, 0, 0, 1, xMax+1, yMax - 2, xMax - 2);
+  init_menu(&context2, NULL, entries_right, 0, 0, 1, xMax + 1, yMax - 2, xMax - 2);
   choose_dir(left, &context1, ".", full_name_buffer1);
   choose_dir(right, &context2, ".", full_name_buffer2);
   refresh();
   wrefresh(context1.window);
   wrefresh(context2.window);
-  struct menu_context* chosen_context = &context1;
-  WINDOW* chosen_window = left;
-  char* chosen_name_buffer = full_name_buffer1;
+  struct menu_context *chosen_context = &context1;
+  WINDOW *chosen_window = left;
+  char *chosen_name_buffer = full_name_buffer1;
   struct entry *chosen_entries = entries_left;
 
   while (1) {
@@ -86,7 +85,8 @@ int main() {
       menu_down(chosen_context);
     }
     if (c == KEY_RIGHT) {
-      if (chosen_entries[chosen_context->current_choice].type == DIRECTORY || chosen_entries[chosen_context->current_choice].type == UP_DIR) {
+      if (chosen_entries[chosen_context->current_choice].type == DIRECTORY
+          || chosen_entries[chosen_context->current_choice].type == UP_DIR) {
         char relative_path[MAX_REALPATH + MAX_FILENAME];
         sprintf(relative_path, "%s/%s", chosen_name_buffer, chosen_entries[chosen_context->current_choice].name);
         choose_dir(chosen_window, chosen_context, relative_path, chosen_name_buffer);
@@ -142,13 +142,13 @@ int main() {
       chosen_window = right;
       chosen_context = &context2;
       chosen_entries = entries_right;
-      chosen_name_buffer= full_name_buffer2;
+      chosen_name_buffer = full_name_buffer2;
     }
     if (c == KEY_SLEFT) {
       chosen_window = left;
       chosen_context = &context1;
       chosen_entries = entries_left;
-      chosen_name_buffer= full_name_buffer1;
+      chosen_name_buffer = full_name_buffer1;
     }
     if (c == KEY_F(10)) {
       break;

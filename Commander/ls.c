@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include "ls.h"
 
+#define MAX_REALPATH 4096
+
 mode_t get_mode(char *realpath_buff) {
   struct stat stat_buff;
   stat(realpath_buff, &stat_buff);
@@ -36,7 +38,7 @@ int ls(struct entry *buffer, char *full_name) {
   struct dirent *current_dirent;
   directory = opendir(full_name);
   int counter = 0;
-  char realpath_buffer[4096];
+  char realpath_buffer[MAX_REALPATH];
   realpath_buffer[0] = '\0';
   strcpy(realpath_buffer, full_name);
 
@@ -44,7 +46,7 @@ int ls(struct entry *buffer, char *full_name) {
     struct entry new_entry;
     sprintf(realpath_buffer + strlen(full_name), "/%s%c", current_dirent->d_name, '\0');
     new_entry.size = get_size(realpath_buffer);
-    new_entry.name = malloc(strlen(current_dirent->d_name)+1);
+    new_entry.name = malloc(strlen(current_dirent->d_name) + 1);
     strcpy(new_entry.name, current_dirent->d_name);
 
     if (strcmp(new_entry.name, ".") == 0) {
@@ -59,7 +61,7 @@ int ls(struct entry *buffer, char *full_name) {
     } else if (is_regular(realpath_buffer)) {
       new_entry.type = STANDARD;
     }
-    // TODO: other files must be indexed too
+      // TODO: other files must be indexed too
     else continue;
     buffer[counter] = new_entry;
     counter++;
